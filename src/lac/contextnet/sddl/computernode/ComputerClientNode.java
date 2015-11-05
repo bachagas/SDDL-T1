@@ -1,4 +1,4 @@
-package lac.contextnet.sddl.node;
+package lac.contextnet.sddl.computernode;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -13,10 +13,9 @@ import lac.cnclib.net.NodeConnectionListener;
 import lac.cnclib.net.mrudp.MrUdpNodeConnection;
 import lac.cnclib.sddl.message.ApplicationMessage;
 import lac.cnclib.sddl.message.Message;
+import lac.contextnet.sddl.computernode.CommandHandler;
 
-import lac.contextnet.sddl.node.CommandHandler;
-
-public class ComputerClient implements NodeConnectionListener {
+public class ComputerClientNode implements NodeConnectionListener {
 //	private static String	gatewayIP   = "127.0.0.1";
 	private static String	gatewayIP   = "192.168.0.144";
 	private static int		gatewayPort = 5500;
@@ -24,7 +23,7 @@ public class ComputerClient implements NodeConnectionListener {
 	private UUID            myUUID;
 	private CommandHandler  commandHandler;
 	
-	public ComputerClient() {
+	public ComputerClientNode() {
 		commandHandler = new CommandHandler();
 		myUUID = UUID.fromString("788b2b22-baa6-4c61-b1bb-01cff1f5f878");
 		InetSocketAddress address = new InetSocketAddress(gatewayIP, gatewayPort);
@@ -39,7 +38,7 @@ public class ComputerClient implements NodeConnectionListener {
 	
 	public static void main(String[] args) {
 		Logger.getLogger("").setLevel(Level.OFF);
-	    new ComputerClient();
+	    new ComputerClientNode();
 	}
 
 	@Override

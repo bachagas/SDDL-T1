@@ -4,6 +4,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="libs/ini4j-0.5.2.jar"/>
 	<classpathentry kind="lib" path="libs/udilib.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/SDDL-Ping-Model"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/SDDL-T1-Model"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

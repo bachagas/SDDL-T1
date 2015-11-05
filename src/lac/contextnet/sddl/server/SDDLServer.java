@@ -16,10 +16,10 @@ import lac.cnet.sddl.udi.core.SddlLayer;
 import lac.cnet.sddl.udi.core.UniversalDDSLayerFactory;
 import lac.cnet.sddl.udi.core.UniversalDDSLayerFactory.SupportedDDSVendors;
 import lac.cnet.sddl.udi.core.listener.UDIDataReaderListener;
+import lac.contextnet.model.EventObject;
+import lac.contextnet.model.PingObject;
 
 import org.ini4j.Ini;
-
-import com.infopae.model.PingObject;
 
 public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 	
@@ -98,7 +98,8 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 			if(gatewayId == null || nodeId == null) //first message to be received
 			{
 				gatewayId = msg.getGatewayId();
-				nodeId = msg.getSenderId();
+				//nodeId = msg.getSenderId();
+				nodeId = UUID.fromString("788b2b22-baa6-4c61-b1bb-01cff1f5f878"); //computer client node id
 			}
 
 			Serializable rawData = Serialization.fromJavaByteStream(msg.getContent());
@@ -134,21 +135,39 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 
 			sddlLayer.writeTopic(PrivateMessage.class.getSimpleName(), privateMessage);
 		}
+		if (rawData instanceof EventObject) {
+			EventObject newEvent = (EventObject) rawData;
+			System.out.print("\nNew event received from: ");
+			System.out.print(msg.getGatewayId());
+			System.out.print(" / ");
+			System.out.println(msg.getSenderId());
+			System.out.println("Event: " + newEvent.toString());
+			//sends command to computer client
+			//TODO: process events using CEP engine and dispatch results
+			ApplicationMessage appMsg = new ApplicationMessage();
+			appMsg.setContentObject(newEvent.getName());
+			PrivateMessage privateMessage = new PrivateMessage();
+			privateMessage.setGatewayId(gatewayId);
+			privateMessage.setNodeId(nodeId);
+			privateMessage.setMessage(Serialization.toProtocolMessage(appMsg));
+			sddlLayer.writeTopic(PrivateMessage.class.getSimpleName(), privateMessage);
+			System.out.print("Escreva a mensagem: ");
+		}
 		if (rawData instanceof String) {
+			String newEvent = (String) rawData;
 			System.out.print("\nNew message received from: ");
 			System.out.print(msg.getGatewayId());
 			System.out.print(" / ");
 			System.out.println(msg.getSenderId());
-			System.out.println("Mensagem: " + (String) rawData);
+			System.out.println("Message: " + newEvent);
 			System.out.print("Escreva a mensagem: ");
-			//TODO: dispatch message to destination node
 		}
 	}
 
 	private void readConfigurationFile () {
 
 		/*reading the configuration file (config.ini)*/
-        try {	    
+        try {
 		    String vendor;
 		
             File iniFile = new File("config.ini");

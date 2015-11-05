@@ -1,4 +1,4 @@
-package lac.contextnet.sddl.node;
+package lac.contextnet.sddl.computernode;
 
 import java.awt.AWTException;
 import java.awt.MouseInfo;

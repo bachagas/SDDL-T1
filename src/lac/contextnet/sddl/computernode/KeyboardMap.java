@@ -1,4 +1,4 @@
-package lac.contextnet.sddl.node;
+package lac.contextnet.sddl.computernode;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
