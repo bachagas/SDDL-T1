@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.UUID;
 
+import com.espertech.esper.client.*;
+
 import lac.cnclib.sddl.message.ApplicationMessage;
 import lac.cnclib.sddl.serialization.Serialization;
 import lac.cnet.sddl.objects.ApplicationObject;
@@ -34,7 +36,41 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 	
 	/* Mobile node ID */
 	private static UUID nodeId;
+	
+	/* CEP runtime engine */
+	private	static EPRuntime cepRT;
     
+	private void setupEsper() {
+		Configuration cepConfig = new Configuration();
+		cepConfig.addEventType("EventObject", EventObject.class.getName());
+		EPServiceProvider cep = EPServiceProviderManager.getProvider("myCEPEngine", cepConfig);
+		this.cepRT = cep.getEPRuntime();
+		
+		// Esper rule to detect user event
+		EPAdministrator cepAdm = cep.getEPAdministrator();
+		EPStatement cepStatement1 = cepAdm.createEPL(
+				"select '#mouse up' as command from " +
+		        "EventObject(context='computer').win:length(1) " +
+		        "where name = 'event1'"
+		);
+		cepStatement1.addListener(new CEPListener());
+		EPStatement cepStatement2 = cepAdm.createEPL(
+				"select '#mouse down' as command from " +
+		        "EventObject(context='computer').win:length(1) " +
+		        "where name = 'event2'"
+		);
+		cepStatement2.addListener(new CEPListener());
+	}
+
+	private static class CEPListener implements UpdateListener {
+	  public void update(EventBean[] newData, EventBean[] oldData) {
+	        System.out.println("COMPUTER COMMAND EVENT: " + newData[0].getUnderlying());
+			if (newData[0].get("command") instanceof String) {
+				sendMessageToComputer((String) newData[0].get("command"));
+			}
+	  }
+	}
+	
 	public SDDLServer () 
 	{
 		System.out.println("SDDLServer: starting...");
@@ -53,6 +89,10 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 	    Object sendTopic = sddlLayer.createTopic(PrivateMessage.class, PrivateMessage.class.getSimpleName());
 	    sddlLayer.createDataReader(this, receiveTopic);
 	    sddlLayer.createDataWriter(sendTopic);
+	    
+	    /*initialize CEP engine */
+		System.out.println("SDDLServer: initializing CEP engine...");
+	    setupEsper();
 	}
 		
 	public static void main(String[] args) {
@@ -142,15 +182,8 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 			System.out.print(" / ");
 			System.out.println(msg.getSenderId());
 			System.out.println("Event: " + newEvent.toString());
-			//sends command to computer client
-			//TODO: process events using CEP engine and dispatch results
-			ApplicationMessage appMsg = new ApplicationMessage();
-			appMsg.setContentObject(newEvent.getName());
-			PrivateMessage privateMessage = new PrivateMessage();
-			privateMessage.setGatewayId(gatewayId);
-			privateMessage.setNodeId(nodeId);
-			privateMessage.setMessage(Serialization.toProtocolMessage(appMsg));
-			sddlLayer.writeTopic(PrivateMessage.class.getSimpleName(), privateMessage);
+			//process events using CEP engine and dispatch results
+			cepRT.sendEvent(newEvent);
 			System.out.print("Escreva a mensagem: ");
 		}
 		if (rawData instanceof String) {
@@ -163,7 +196,18 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 			System.out.print("Escreva a mensagem: ");
 		}
 	}
-
+	
+	//sends command to computer client
+	private static void sendMessageToComputer (String msg) {
+		ApplicationMessage appMsg = new ApplicationMessage();
+		appMsg.setContentObject(msg);
+		PrivateMessage privateMessage = new PrivateMessage();
+		privateMessage.setGatewayId(gatewayId);
+		privateMessage.setNodeId(nodeId);
+		privateMessage.setMessage(Serialization.toProtocolMessage(appMsg));
+		sddlLayer.writeTopic(PrivateMessage.class.getSimpleName(), privateMessage);
+	}
+	
 	private void readConfigurationFile () {
 
 		/*reading the configuration file (config.ini)*/

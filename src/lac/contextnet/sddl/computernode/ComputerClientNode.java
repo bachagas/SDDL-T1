@@ -16,8 +16,9 @@ import lac.cnclib.sddl.message.Message;
 import lac.contextnet.sddl.computernode.CommandHandler;
 
 public class ComputerClientNode implements NodeConnectionListener {
-//	private static String	gatewayIP   = "127.0.0.1";
-	private static String	gatewayIP   = "192.168.0.144";
+	//private static String	gatewayIP   = "127.0.0.1";
+	//private static String	gatewayIP   = "192.168.0.144";
+	private static String	gatewayIP   = "192.168.1.68";
 	private static int		gatewayPort = 5500;
 	private MrUdpNodeConnection	connection;
 	private UUID            myUUID;
