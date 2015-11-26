@@ -135,12 +135,8 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 		if (topicSample instanceof Message) {
 			msg = (Message) topicSample;
 			
-			if(gatewayId == null || nodeId == null) //first message to be received
-			{
-				gatewayId = msg.getGatewayId();
-				//nodeId = msg.getSenderId();
-				nodeId = UUID.fromString("788b2b22-baa6-4c61-b1bb-01cff1f5f878"); //computer client node id
-			}
+			gatewayId = msg.getGatewayId();
+			nodeId = msg.getSenderId();
 
 			Serializable rawData = Serialization.fromJavaByteStream(msg.getContent());
 			treatDataReceival(msg, rawData);
@@ -203,6 +199,7 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 		appMsg.setContentObject(msg);
 		PrivateMessage privateMessage = new PrivateMessage();
 		privateMessage.setGatewayId(gatewayId);
+		UUID nodeId = UUID.fromString("788b2b22-baa6-4c61-b1bb-01cff1f5f878"); //computer client node id
 		privateMessage.setNodeId(nodeId);
 		privateMessage.setMessage(Serialization.toProtocolMessage(appMsg));
 		sddlLayer.writeTopic(PrivateMessage.class.getSimpleName(), privateMessage);
