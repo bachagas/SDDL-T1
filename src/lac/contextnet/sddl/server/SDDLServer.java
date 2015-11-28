@@ -48,25 +48,57 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 		
 		// Esper rule to detect user event
 		EPAdministrator cepAdm = cep.getEPAdministrator();
-		EPStatement cepStatement1 = cepAdm.createEPL(
-				"select '#mouse up' as command from " +
-		        "EventObject(context='computer').win:length(1) " +
+		EPStatement ruleConflict = cepAdm.createEPL(
+		      //todo o evento precedido por um evento no mesmo contexto mas com uma fonte diferente num intervalo de 5 segundos ==> para detectar os conflitos
+		      "select b.source as sender "
+		      + "from pattern "
+		      + "[every (a=EventObject() -> b=EventObject(context=a.context, source!=a.source) "
+		      + "where timer:within(5 seconds))]"
+		);
+		ruleConflict.addListener(new CEPConflictListener());
+		EPStatement ruleComputerNoConflict1 = cepAdm.createEPL(
+				"select '#mouse up' as command "
+				+ "from EventObject(context='computer').win:length(1) "
+				+ "where name = 'event1'"
+		);
+		ruleComputerNoConflict1.addListener(new CEPComputerListener());
+		EPStatement ruleComputerNoConflict2 = cepAdm.createEPL(
+				"select '#mouse down' as command "
+				+ "from EventObject(context='computer').std:lastevent() "
+				+ "where name = 'event2'"
+		);
+		ruleComputerNoConflict2.addListener(new CEPComputerListener());
+		EPStatement ruleLamp = cepAdm.createEPL(
+				"select '#1' as command from " +
+		        "EventObject(context='lamp').win:length(1) " +
 		        "where name = 'event1'"
 		);
-		cepStatement1.addListener(new CEPListener());
-		EPStatement cepStatement2 = cepAdm.createEPL(
-				"select '#mouse down' as command from " +
-		        "EventObject(context='computer').win:length(1) " +
-		        "where name = 'event2'"
-		);
-		cepStatement2.addListener(new CEPListener());
+		ruleLamp.addListener(new CEPLampListener());
 	}
 
-	private static class CEPListener implements UpdateListener {
+	private static class CEPComputerListener implements UpdateListener {
 	  public void update(EventBean[] newData, EventBean[] oldData) {
 	        System.out.println("COMPUTER COMMAND EVENT: " + newData[0].getUnderlying());
 			if (newData[0].get("command") instanceof String) {
 				sendMessageToComputer((String) newData[0].get("command"));
+			}
+	  }
+	}
+	
+	private static class CEPLampListener implements UpdateListener {
+	  public void update(EventBean[] newData, EventBean[] oldData) {
+	        System.out.println("LAMP COMMAND EVENT: " + newData[0].getUnderlying());
+			if (newData[0].get("command") instanceof String) {
+				sendMessageToArduino((String) newData[0].get("command"));
+			}
+	  }
+	}
+	
+	private static class CEPConflictListener implements UpdateListener {
+	  public void update(EventBean[] newData, EventBean[] oldData) {
+	        System.out.println("*** CONFLICT DETECTED: " + newData[0].getUnderlying());
+			if (newData[0].get("sender") instanceof String) {
+				sendMessageToNode("*** CONFLICT DETECTED: " + newData[0].getUnderlying(), (String) newData[0].get("sender"));
 			}
 	  }
 	}
@@ -193,7 +225,19 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 		}
 	}
 	
-	//sends command to computer client
+	//sends message to sender node
+	private static void sendMessageToNode (String msg, String nodeStr) {
+		ApplicationMessage appMsg = new ApplicationMessage();
+		appMsg.setContentObject(msg);
+		PrivateMessage privateMessage = new PrivateMessage();
+		privateMessage.setGatewayId(gatewayId);
+		UUID nodeId = UUID.fromString("788b2b22-baa6-4c61-b1bb-01cff1f5f878"); //computer client node id
+		privateMessage.setNodeId(nodeId);
+		privateMessage.setMessage(Serialization.toProtocolMessage(appMsg));
+		sddlLayer.writeTopic(PrivateMessage.class.getSimpleName(), privateMessage);
+	}
+	
+	//sends command to computer node
 	private static void sendMessageToComputer (String msg) {
 		ApplicationMessage appMsg = new ApplicationMessage();
 		appMsg.setContentObject(msg);
@@ -205,8 +249,19 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 		sddlLayer.writeTopic(PrivateMessage.class.getSimpleName(), privateMessage);
 	}
 	
+	//sends command to arduino node
+	private static void sendMessageToArduino (String msg) {
+		ApplicationMessage appMsg = new ApplicationMessage();
+		appMsg.setContentObject(msg);
+		PrivateMessage privateMessage = new PrivateMessage();
+		privateMessage.setGatewayId(gatewayId);
+		UUID nodeId = UUID.fromString("550547b6-dcea-4aa6-8279-04332f1e251e"); //arduino mobile node id
+		privateMessage.setNodeId(nodeId);
+		privateMessage.setMessage(Serialization.toProtocolMessage(appMsg));
+		sddlLayer.writeTopic(PrivateMessage.class.getSimpleName(), privateMessage);
+	}
+	
 	private void readConfigurationFile () {
-
 		/*reading the configuration file (config.ini)*/
         try {
 		    String vendor;
