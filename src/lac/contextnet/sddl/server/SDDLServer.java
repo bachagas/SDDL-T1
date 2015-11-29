@@ -231,7 +231,7 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 		appMsg.setContentObject(msg);
 		PrivateMessage privateMessage = new PrivateMessage();
 		privateMessage.setGatewayId(gatewayId);
-		UUID nodeId = UUID.fromString("788b2b22-baa6-4c61-b1bb-01cff1f5f878"); //computer client node id
+		UUID nodeId = UUID.fromString(nodeStr);
 		privateMessage.setNodeId(nodeId);
 		privateMessage.setMessage(Serialization.toProtocolMessage(appMsg));
 		sddlLayer.writeTopic(PrivateMessage.class.getSimpleName(), privateMessage);
@@ -239,26 +239,12 @@ public class SDDLServer implements UDIDataReaderListener<ApplicationObject> {
 	
 	//sends command to computer node
 	private static void sendMessageToComputer (String msg) {
-		ApplicationMessage appMsg = new ApplicationMessage();
-		appMsg.setContentObject(msg);
-		PrivateMessage privateMessage = new PrivateMessage();
-		privateMessage.setGatewayId(gatewayId);
-		UUID nodeId = UUID.fromString("788b2b22-baa6-4c61-b1bb-01cff1f5f878"); //computer client node id
-		privateMessage.setNodeId(nodeId);
-		privateMessage.setMessage(Serialization.toProtocolMessage(appMsg));
-		sddlLayer.writeTopic(PrivateMessage.class.getSimpleName(), privateMessage);
+		sendMessageToNode(msg, "788b2b22-baa6-4c61-b1bb-01cff1f5f878");
 	}
 	
 	//sends command to arduino node
 	private static void sendMessageToArduino (String msg) {
-		ApplicationMessage appMsg = new ApplicationMessage();
-		appMsg.setContentObject(msg);
-		PrivateMessage privateMessage = new PrivateMessage();
-		privateMessage.setGatewayId(gatewayId);
-		UUID nodeId = UUID.fromString("550547b6-dcea-4aa6-8279-04332f1e251e"); //arduino mobile node id
-		privateMessage.setNodeId(nodeId);
-		privateMessage.setMessage(Serialization.toProtocolMessage(appMsg));
-		sddlLayer.writeTopic(PrivateMessage.class.getSimpleName(), privateMessage);
+		sendMessageToNode(msg, "550547b6-dcea-4aa6-8279-04332f1e251e");
 	}
 	
 	private void readConfigurationFile () {
